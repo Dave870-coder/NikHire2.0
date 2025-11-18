@@ -145,13 +145,13 @@ class AppState {
         const content = `
             <div class="py-8">
                 <!-- Header with User Info -->
-                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-lg mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-8">
                     <div class="flex justify-between items-center">
                         <div>
                             <h1 class="text-3xl font-bold">Welcome back, ${this.currentUser.name}! 👋</h1>
                             <p class="text-indigo-100 mt-1">Campus: ${this.currentUser.institution || 'Not set'}</p>
                         </div>
-                        <button id="logoutBtn" class="bg-white text-indigo-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">
+                        <button id="logoutBtn" class="bg-white text-blue-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">
                             Logout
                         </button>
                     </div>
@@ -228,7 +228,7 @@ class AppState {
                     <!-- Sidebar (1 column) -->
                     <div class="space-y-6">
                         <!-- Profile Card -->
-                        <div class="bg-white rounded-lg shadow p-6">
+                                <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
                             <h3 class="text-xl font-bold mb-4">👤 My Profile</h3>
                             <div class="space-y-4">
                                 <div>
@@ -273,7 +273,7 @@ class AppState {
         document.getElementById('refreshJobsBtn').addEventListener('click', () => this.loadJobs());
         
         // Dynamic filtering listeners
-        document.getElementById('applyFiltersBtn').addEventListener('click', () => this.applyJobFilters());
+                                            <button id="registerSubmit" class="flex-1 btn-secondary px-4 py-2 rounded font-bold text-white hover:bg-blue-900 transition">
         document.getElementById('jobSearch').addEventListener('keyup', () => this.applyJobFilters());
         document.getElementById('companyFilter').addEventListener('keyup', () => this.applyJobFilters());
         document.getElementById('sortBy').addEventListener('change', () => this.applyJobFilters());
@@ -290,13 +290,13 @@ class AppState {
         const content = `
             <div class="py-8">
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-red-600 to-pink-600 text-white p-6 rounded-lg mb-8">
+                    <div class="bg-gradient-to-r from-blue-700 to-blue-800 text-white p-6 rounded-lg mb-8">
                     <div class="flex justify-between items-center">
                         <div>
                             <h1 class="text-3xl font-bold">Admin Dashboard 🛡️</h1>
-                            <p class="text-red-100 mt-1">Full system control & recruitment management</p>
+                                <p class="text-blue-100 mt-1">Full system control & recruitment management</p>
                         </div>
-                        <button id="logoutBtn" class="bg-white text-red-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">
+                        <button id="logoutBtn" class="bg-white text-blue-700 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">
                             Logout
                         </button>
                     </div>

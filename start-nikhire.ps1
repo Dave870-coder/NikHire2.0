@@ -44,13 +44,7 @@ Write-Host "Press Ctrl+C in each terminal to stop services" -ForegroundColor Gra
 Write-Host ""
 
 # Start backend in a new PowerShell window
-$backendScript = {
-    cd 'c:\Users\David\Documents\Octahire_App\NikHire'
-    Write-Host "Starting Backend Server..." -ForegroundColor Green
-    npm run server
-}
-
-Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "cd 'c:\Users\David\Documents\Octahire_App\NikHire'; Write-Host 'Backend Server starting on port 3000...' -ForegroundColor Green; npm run server" -WindowStyle Normal
+Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "Set-Location 'c:\Users\David\Documents\Octahire_App\NikHire'; Write-Host 'Backend Server starting on port 3000...' -ForegroundColor Green; npm run server" -WindowStyle Normal
 
 # Wait 2 seconds for backend to start
 Start-Sleep -Seconds 2

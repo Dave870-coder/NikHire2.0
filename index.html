@@ -6,54 +6,125 @@
     <title>Nikhire - Campus Recruitment System</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        /* Custom styles to match the color scheme */
+        /* Professional Corporate Color Scheme */
         :root {
-            --primary: #4F46E5;
-            --secondary: #7C3AED;
-            --accent: #EC4899;
-            --background: #F8FAFC;
-            --text: #1F2937;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --secondary: #1E3A8A;
+            --accent: #3B82F6;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --background: #F0F9FF;
+            --card-bg: #FFFFFF;
+            --text: #111827;
+            --text-light: #4B5563;
+            --border: #E5E7EB;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--background);
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0E7FF 100%);
             color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
         }
 
         .btn-primary {
             background-color: var(--primary);
             color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(37, 99, 235, 0.3);
         }
 
         .btn-secondary {
             background-color: var(--secondary);
             color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: #0F172A;
+            transform: translateY(-2px);
         }
 
         .btn-accent {
             background-color: var(--accent);
             color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accent:hover {
+            background-color: #1D4ED8;
+            transform: translateY(-2px);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header a {
+            color: rgba(255, 255, 255, 0.8);
+            transition: color 0.3s ease;
+        }
+
+        header a:hover {
+            color: white;
+        }
+
+        main {
+            background: transparent;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        footer {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-dark) 100%);
+            color: white;
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body class="font-sans">
     <!-- Header -->
-    <header class="bg-white shadow-md">
+    <header>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center">
-                    <img src="https://via.placeholder.com/40" alt="Nikhire Logo" class="h-8 w-8 mr-2">
-                    <span class="text-xl font-bold text-gray-800">Nikhire</span>
+                    <div class="h-10 w-10 bg-white rounded-lg mr-3 flex items-center justify-center font-bold text-blue-600">N</div>
+                    <span class="text-2xl font-bold">Nikhire</span>
                 </div>
-                <nav>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Companies</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">About</a>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="hover:text-white transition">Home</a>
+                    <a href="#" class="hover:text-white transition">Jobs</a>
+                    <a href="#" class="hover:text-white transition">Companies</a>
+                    <a href="#" class="hover:text-white transition">About</a>
                 </nav>
-                <div>
-                    <button id="loginBtn" class="btn-primary px-4 py-2 rounded-md text-sm font-medium">Login</button>
-                    <button id="signupBtn" class="btn-secondary px-4 py-2 rounded-md text-sm font-medium ml-2">Sign Up</button>
+                <div class="flex space-x-3">
+                    <button id="loginBtn" class="btn-accent px-4 py-2 rounded-md text-sm font-medium">Login</button>
+                    <button id="signupBtn" class="btn-primary px-4 py-2 rounded-md text-sm font-medium bg-white text-blue-600 hover:bg-gray-100">Sign Up</button>
                 </div>
             </div>
         </div>
@@ -67,9 +138,31 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white shadow-md mt-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <p class="text-center text-gray-600">© 2023 Nikhire. All rights reserved.</p>
+    <footer class="mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h4 class="font-bold mb-4">About Nikhire</h4>
+                    <p class="text-sm opacity-90">Connecting talented students with leading recruitment opportunities across Nigeria.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="text-sm space-y-2 opacity-90">
+                        <li><a href="#" class="hover:text-white transition">Browse Jobs</a></li>
+                        <li><a href="#" class="hover:text-white transition">My Applications</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Follow Us</h4>
+                    <div class="text-sm space-y-2 opacity-90">
+                        <p>Twitter • LinkedIn • Facebook</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-white border-opacity-20 pt-8">
+                <p class="text-center text-sm opacity-75">© 2025 Nikhire. All rights reserved. | Empowering Campus Recruitment</p>
+            </div>
         </div>
     </footer>
 
