@@ -43,6 +43,12 @@ A comprehensive web-based campus recruitment platform that connects students wit
 
 ### Quick Start
 
+**Windows Users (Easiest - Double-click one of these):**
+- `start-nikhire.bat` - Batch script (auto-launches both servers)
+- `start-nikhire.ps1` - PowerShell script (more control)
+
+**Manual Setup:**
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/Dave870-coder/NikHire.git
@@ -54,24 +60,24 @@ cd NikHire
 npm install
 ```
 
-3. Configure MongoDB connection:
-   - Start MongoDB locally: `mongod`
-   - Or update `.env` with your MongoDB Atlas connection string
-
-4. Run the application:
+3. **Terminal 1 - Start Backend (Port 3000):**
 ```bash
-# Run both server and client
+npm run server
+```
+
+4. **Terminal 2 - Start Frontend (Port 8000):**
+```bash
+npm run client
+```
+
+5. Open browser: `http://localhost:8000`
+
+**Or run both together:**
+```bash
 npm run dev
-
-# Or run separately
-npm run server    # Terminal 1 - Backend on http://localhost:5000
-npm run client    # Terminal 2 - Frontend on http://localhost:8000
 ```
 
-5. Open your browser:
-```
-http://localhost:8000
-```
+**Database:** Automatically uses in-memory MongoDB (no installation needed!)
 
 ### Detailed Setup Instructions
 
