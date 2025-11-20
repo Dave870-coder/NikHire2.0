@@ -100,6 +100,11 @@ const jobSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Optional array of requirements for the job
+  requirements: {
+    type: [String],
+    default: []
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -212,7 +217,7 @@ const verifyToken = (req, res, next) => {
 // Register User
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, institution, occupation, profileImage } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -227,7 +232,10 @@ app.post('/api/auth/register', async (req, res) => {
       name,
       email,
       password,
-      role: role || 'student'
+      role: role || 'student',
+      institution: institution || '',
+      occupation: occupation || '',
+      profileImage: profileImage || ''
     });
 
     await user.save();
@@ -352,7 +360,7 @@ app.get('/api/jobs', async (req, res) => {
 // Create Job (Admin)
 app.post('/api/jobs', verifyToken, async (req, res) => {
   try {
-    const { title, company, description } = req.body;
+    const { title, company, description, requirements } = req.body;
 
     if (!title || !company || !description) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -362,6 +370,7 @@ app.post('/api/jobs', verifyToken, async (req, res) => {
       title,
       company,
       description,
+      requirements: Array.isArray(requirements) ? requirements : (requirements ? String(requirements).split(',').map(s => s.trim()).filter(Boolean) : []),
       createdBy: req.userId
     });
 

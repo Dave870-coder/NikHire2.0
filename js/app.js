@@ -95,8 +95,25 @@ class AppState {
                     <h2 class="text-2xl font-bold mb-6 text-center">Get Started</h2>
                     
                     <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-indigo-500" id="reg_name" type="text" placeholder="Your full name">
+                    </div>
+
+                    <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Email Address</label>
                         <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-indigo-500" id="email" type="email" placeholder="your@email.com">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Institution</label>
+                        <select id="reg_institution" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline focus:border-indigo-500">
+                            <option value="">Select institution (optional)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Looking For (Occupation)</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-indigo-500" id="reg_occupation" type="text" placeholder="e.g., Software Engineer">
                     </div>
 
                     <div class="mb-6">
@@ -118,6 +135,19 @@ class AppState {
 
         document.getElementById('appContent').innerHTML = content;
 
+        // Populate institutions into registration select
+        this.api.getInstitutions().then(list => {
+            const sel = document.getElementById('reg_institution');
+            if (sel && Array.isArray(list)) {
+                list.forEach(inst => {
+                    const opt = document.createElement('option');
+                    opt.value = inst.name || inst;
+                    opt.textContent = inst.name || inst;
+                    sel.appendChild(opt);
+                });
+            }
+        }).catch(() => {});
+
         document.getElementById('loginSubmit').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -131,12 +161,16 @@ class AppState {
         document.getElementById('registerSubmit').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const name = prompt('Enter your full name:');
+            const name = document.getElementById('reg_name').value;
+            const institution = document.getElementById('reg_institution').value;
+            const occupation = document.getElementById('reg_occupation').value;
+
             if (!email || !password || !name) {
-                alert('All fields are required');
+                alert('Name, email and password are required');
                 return;
             }
-            this.registerUser({ email, password, name, role: 'student' });
+
+            this.registerUser({ email, password, name, role: 'student', institution, occupation });
         });
     }
 
@@ -330,6 +364,7 @@ class AppState {
                             <input class="w-full border rounded px-3 py-2" id="jobTitle" type="text" placeholder="Job Title">
                             <input class="w-full border rounded px-3 py-2" id="jobCompany" type="text" placeholder="Company Name">
                             <textarea class="w-full border rounded px-3 py-2 h-24" id="jobDescription" placeholder="Job Description & Requirements"></textarea>
+                            <textarea class="w-full border rounded px-3 py-2 h-24" id="jobRequirements" placeholder="Requirements (comma separated)"></textarea>
                             <button id="addJobBtn" class="w-full btn-secondary px-4 py-2 rounded font-bold text-white hover:bg-purple-700 transition">
                                 Post Job
                             </button>
@@ -410,7 +445,15 @@ class AppState {
                         </div>
                         <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-bold">New</span>
                     </div>
-                    <p class="text-gray-700 text-sm mb-4">${job.description.substring(0, 100)}...</p>
+                    <p class="text-gray-700 text-sm mb-4">${job.description.substring(0, 200)}${job.description.length>200? '...':''}</p>
+                    ${job.requirements && job.requirements.length ? `
+                        <div class="mb-3">
+                            <strong class="text-sm text-gray-700">Requirements:</strong>
+                            <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
+                                ${job.requirements.map(req => `<li>${req}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
                     <button class="btn-accent px-4 py-2 rounded text-sm apply-btn font-bold hover:opacity-90 transition" data-job-id="${job._id}">
                         Apply Now 🚀
                     </button>
@@ -664,6 +707,8 @@ class AppState {
         const title = document.getElementById('jobTitle').value;
         const company = document.getElementById('jobCompany').value;
         const description = document.getElementById('jobDescription').value;
+        const requirementsRaw = document.getElementById('jobRequirements') ? document.getElementById('jobRequirements').value : '';
+        const requirements = requirementsRaw ? requirementsRaw.split(/[,\n]/).map(s => s.trim()).filter(Boolean) : [];
 
         if (!title || !company || !description) {
             alert('Please fill in all fields');
@@ -671,11 +716,12 @@ class AppState {
         }
 
         try {
-            await this.api.createJob({ title, company, description });
+            await this.api.createJob({ title, company, description, requirements });
             alert('Job posted successfully!');
             document.getElementById('jobTitle').value = '';
             document.getElementById('jobCompany').value = '';
             document.getElementById('jobDescription').value = '';
+            if (document.getElementById('jobRequirements')) document.getElementById('jobRequirements').value = '';
             this.loadAdminStats();
         } catch (error) {
             alert(error.message);
@@ -746,7 +792,15 @@ class AppState {
                     </div>
                     <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-bold">New</span>
                 </div>
-                <p class="text-gray-700 text-sm mb-4">${job.description.substring(0, 100)}...</p>
+                <p class="text-gray-700 text-sm mb-4">${job.description.substring(0, 200)}${job.description.length>200? '...':''}</p>
+                ${job.requirements && job.requirements.length ? `
+                    <div class="mb-3">
+                        <strong class="text-sm text-gray-700">Requirements:</strong>
+                        <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
+                            ${job.requirements.map(req => `<li>${req}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
                 <button class="btn-accent px-4 py-2 rounded text-sm apply-btn font-bold hover:opacity-90 transition" data-job-id="${job._id}">
                     Apply Now 🚀
                 </button>
