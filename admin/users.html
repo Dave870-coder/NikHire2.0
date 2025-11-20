@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NikHire — Admin Users</title>
+  <link href="/index.html" rel="home">
+  <style>
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#f3f7ff,#eef2ff); color:#0f172a; padding:24px}
+    .container{max-width:1100px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eef2ff;text-align:left}
+    th{background:#f8fafc;color:#0f172a}
+    .muted{color:#6b7280}
+    .notice{background:#eef2ff;padding:12px;border-radius:6px;margin-bottom:12px}
+    .btn{background:#1e3a8a;color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Admin — Registered Users</h1>
+    <p class="muted">This page loads `/api/users` using the saved token in `localStorage.authToken`. You must be logged in as an admin. <a href="/index.html" class="btn" style="margin-left:12px">Open App</a></p>
+
+    <div id="status" class="notice">Checking authentication...</div>
+    <div id="usersWrap"></div>
+  </div>
+
+  <script>
+    async function loadUsers() {
+      const status = document.getElementById('status');
+      const wrap = document.getElementById('usersWrap');
+      const token = localStorage.getItem('authToken');
+
+      if (!token) {
+        status.innerHTML = 'No token found. Please login as an admin in the main app.';
+        return;
+      }
+
+      status.innerHTML = 'Loading users...';
+
+      try {
+        const res = await fetch('http://localhost:3000/api/users', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(()=>({message:'Unable to parse error'}));
+          status.innerHTML = 'Error loading users: ' + (data.message || res.statusText);
+          return;
+        }
+
+        const users = await res.json();
+        status.innerHTML = 'Found ' + users.length + ' users';
+
+        if (!users.length) {
+          wrap.innerHTML = '<p class="muted">No users found.</p>';
+          return;
+        }
+
+        const rows = users.map(u => `<tr>
+            <td>${u._id}</td>
+            <td>${u.name || ''}</td>
+            <td>${u.email || ''}</td>
+            <td>${u.role || ''}</td>
+            <td>${u.institution || ''}</td>
+            <td>${u.occupation || ''}</td>
+            <td>${new Date(u.createdAt || 0).toLocaleString()}</td>
+          </tr>`).join('');
+
+        wrap.innerHTML = `
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Occupation</th><th>Created</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+
+      } catch (err) {
+        status.innerHTML = 'Request failed: ' + (err.message || err);
+      }
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
