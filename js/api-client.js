@@ -90,6 +90,20 @@ class APIClient {
         }
     }
 
+    async getUser(userId) {
+        try {
+            const response = await fetch(`${this.baseURL}/api/users/${userId}`, {
+                method: 'GET',
+                headers: this.getHeaders()
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch user');
+            return await response.json();
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async updateUserProfile(userId, profileData) {
         try {
             const response = await fetch(`${this.baseURL}/api/users/${userId}`, {

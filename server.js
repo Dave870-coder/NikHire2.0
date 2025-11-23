@@ -54,12 +54,17 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['student', 'admin'],
+    enum: ['student', 'admin', 'organization'],
     default: 'student'
   },
   institution: String,
   occupation: String,
   profileImage: String,
+  cv: String,
+  cvFilename: String,
+  skills: [String],
+  experience: String,
+  companyName: String,
   createdAt: {
     type: Date,
     default: Date.now
@@ -217,7 +222,7 @@ const verifyToken = (req, res, next) => {
 // Register User
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, role, institution, occupation, profileImage } = req.body;
+    const { name, email, password, role, institution, occupation, profileImage, companyName } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -235,7 +240,8 @@ app.post('/api/auth/register', async (req, res) => {
       role: role || 'student',
       institution: institution || '',
       occupation: occupation || '',
-      profileImage: profileImage || ''
+      profileImage: profileImage || '',
+      companyName: companyName || ''
     });
 
     await user.save();
@@ -325,14 +331,27 @@ app.get('/api/users', verifyToken, async (req, res) => {
   }
 });
 
+// Get Single User Profile (Admin View with CV)
+app.get('/api/users/:id', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Update User Profile
 app.put('/api/users/:id', verifyToken, async (req, res) => {
   try {
-    const { institution, occupation, profileImage } = req.body;
+    const { institution, occupation, profileImage, cv, cvFilename, skills, experience, companyName } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { institution, occupation, profileImage },
+      { institution, occupation, profileImage, cv, cvFilename, skills, experience, companyName },
       { new: true }
     ).select('-password');
 

@@ -17,6 +17,8 @@ class AppState {
                 this.currentUser = await this.api.getCurrentUser();
                 if (this.currentUser.role === 'admin') {
                     this.renderAdminDashboard();
+                } else if (this.currentUser.role === 'organization') {
+                    this.renderOrganizationDashboard();
                 } else {
                     this.renderStudentDashboard();
                 }
@@ -45,6 +47,8 @@ class AppState {
             this.currentUser = user;
             if (user.role === 'admin') {
                 this.renderAdminDashboard();
+            } else if (user.role === 'organization') {
+                this.renderOrganizationDashboard();
             } else {
                 this.renderStudentDashboard();
             }
@@ -60,10 +64,11 @@ class AppState {
     }
 
     renderHomePage() {
-        const html = '<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100"><div class="text-center py-20"><h1 class="text-5xl font-bold mb-4 text-gray-900">Welcome to NikHire</h1><p class="text-2xl text-gray-600 mb-8">Campus Recruitment Made Simple</p><p class="text-lg text-gray-500 mb-12 max-w-2xl mx-auto">Connect with top employers and launch your career. Our platform makes it easy for students to find opportunities and employers to discover talent.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12"><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">💼</div><h3 class="font-bold text-lg mb-2">Job Listings</h3><p class="text-gray-600 text-sm">Browse opportunities from top companies</p></div><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">📋</div><h3 class="font-bold text-lg mb-2">Easy Apply</h3><p class="text-gray-600 text-sm">Apply with one click and track status</p></div><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">🎯</div><h3 class="font-bold text-lg mb-2">Smart Matching</h3><p class="text-gray-600 text-sm">Find jobs matched to your profile</p></div></div></div><div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mb-8"><h2 class="text-2xl font-bold mb-6 text-center">Get Started</h2><div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none" id="reg_name" type="text" placeholder="Your full name"></div><div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email Address</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none" id="email" type="email" placeholder="your@email.com"></div><div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select id="reg_institution" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none"><option value="">Select institution (optional)</option></select></div><div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none" id="reg_occupation" type="text" placeholder="e.g., Software Engineer"></div><div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none" id="password" type="password" placeholder="••••••••"></div><div class="flex gap-4"><button id="loginSubmit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Sign In</button><button id="registerSubmit" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded font-bold hover:bg-indigo-700 transition">Sign Up</button></div></div></div>';
+        const html = '<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100"><div class="text-center py-16"><h1 class="text-5xl font-bold mb-4 text-gray-900">Welcome to NikHire</h1><p class="text-2xl text-gray-600 mb-8">Campus Recruitment Platform</p><p class="text-lg text-gray-500 mb-12 max-w-2xl mx-auto">Connect with top employers and launch your career. Our platform makes it easy for students to find opportunities and employers to discover talent.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12"><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">💼</div><h3 class="font-bold text-lg mb-2">Job Listings</h3><p class="text-gray-600 text-sm">Browse opportunities from top companies</p></div><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">📋</div><h3 class="font-bold text-lg mb-2">Easy Apply</h3><p class="text-gray-600 text-sm">Apply with one click and track status</p></div><div class="bg-white p-6 rounded-lg shadow"><div class="text-4xl mb-2">🎯</div><h3 class="font-bold text-lg mb-2">Smart Matching</h3><p class="text-gray-600 text-sm">Find jobs matched to your profile</p></div></div></div><div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"><div class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-6 text-center">Student Login</h2><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="email" type="email" placeholder="your@email.com"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="password" type="password" placeholder="••••••••"></div><button id="loginSubmit" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Sign In</button></div></div><div class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-6 text-center">Organization/Admin Login</h2><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="orgEmail" type="email" placeholder="company@email.com"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="orgPassword" type="password" placeholder="••••••••"></div><button id="adminLoginSubmit" class="w-full bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700 transition">Admin Sign In</button><p class="text-xs text-gray-600 text-center mt-4">New Organization? <button id="adminRegisterToggle" class="text-red-600 font-bold hover:underline">Register here</button></p></div></div></div><div id="adminRegisterForm" class="hidden max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mb-8"><h2 class="text-2xl font-bold mb-6 text-center">Register Organization</h2><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Organization Name</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="org_name" type="text" placeholder="Company Name"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="org_email" type="email" placeholder="company@email.com"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="org_password" type="password" placeholder="••••••••"></div><button id="adminRegisterSubmit" class="w-full bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700 transition">Register Organization</button><button id="adminRegisterCancel" class="w-full mt-2 bg-gray-400 text-white px-4 py-2 rounded font-bold hover:bg-gray-500 transition">Cancel</button></div></div><div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-6 text-center">Student Registration</h2><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="reg_name" type="text" placeholder="Your full name"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="reg_email" type="email" placeholder="student@email.com"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select id="reg_institution" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"><option value="">Select institution</option></select></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="reg_occupation" type="text" placeholder="e.g., Software Engineer"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Password</label><input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="reg_password" type="password" placeholder="••••••••"></div><button id="registerSubmit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded font-bold hover:bg-indigo-700 transition">Student Sign Up</button></div></div></div>';
 
         document.getElementById('appContent').innerHTML = html;
 
+        // Load institutions
         this.api.getInstitutions().then(list => {
             const sel = document.getElementById('reg_institution');
             if (sel && Array.isArray(list)) {
@@ -76,6 +81,7 @@ class AppState {
             }
         }).catch(() => {});
 
+        // Student login
         document.getElementById('loginSubmit').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -86,9 +92,10 @@ class AppState {
             this.loginUser(email, password);
         });
 
+        // Student registration
         document.getElementById('registerSubmit').addEventListener('click', () => {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const email = document.getElementById('reg_email').value;
+            const password = document.getElementById('reg_password').value;
             const name = document.getElementById('reg_name').value;
             const institution = document.getElementById('reg_institution').value;
             const occupation = document.getElementById('reg_occupation').value;
@@ -100,10 +107,48 @@ class AppState {
 
             this.registerUser({ email, password, name, role: 'student', institution, occupation });
         });
+
+        // Admin login
+        document.getElementById('adminLoginSubmit').addEventListener('click', () => {
+            const email = document.getElementById('orgEmail').value;
+            const password = document.getElementById('orgPassword').value;
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+            this.loginUser(email, password);
+        });
+
+        // Admin register toggle
+        document.getElementById('adminRegisterToggle').addEventListener('click', (e) => {
+            e.preventDefault();
+            const form = document.getElementById('adminRegisterForm');
+            form.classList.toggle('hidden');
+        });
+
+        // Admin registration
+        document.getElementById('adminRegisterSubmit').addEventListener('click', () => {
+            const email = document.getElementById('org_email').value;
+            const password = document.getElementById('org_password').value;
+            const name = document.getElementById('org_name').value;
+
+            if (!email || !password || !name) {
+                alert('Organization name, email and password are required');
+                return;
+            }
+
+            this.registerUser({ email, password, name, role: 'organization', companyName: name });
+        });
+
+        // Admin register cancel
+        document.getElementById('adminRegisterCancel').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('adminRegisterForm').classList.add('hidden');
+        });
     }
 
     renderStudentDashboard() {
-        const html = '<div class="py-8"><div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-8"><div class="flex justify-between items-center"><div><h1 class="text-3xl font-bold">Welcome back, ' + (this.currentUser.name || 'Student') + '! 👋</h1><p class="text-blue-100 mt-1">Campus: ' + (this.currentUser.institution || 'Not set') + '</p></div><button id="logoutBtn" class="bg-white text-blue-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">Logout</button></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"><div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500"><div class="text-sm text-gray-600">Jobs Available</div><div class="text-3xl font-bold text-blue-600" id="jobCount">0</div></div><div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500"><div class="text-sm text-gray-600">Applications Sent</div><div class="text-3xl font-bold text-green-600" id="appCount">0</div></div><div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500"><div class="text-sm text-gray-600">Tasks Pending</div><div class="text-3xl font-bold text-orange-600" id="taskCount">0</div></div><div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500"><div class="text-sm text-gray-600">Profile Strength</div><div class="text-3xl font-bold text-purple-600" id="profileStrength">0%</div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2 space-y-8"><div class="bg-white rounded-lg shadow p-6"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">💼 Available Jobs</h2><button id="refreshJobsBtn" class="text-blue-600 hover:text-blue-700 text-sm">🔄 Refresh</button></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3"><input class="w-full border rounded px-3 py-2 text-sm" id="jobSearch" type="text" placeholder="🔍 Search jobs by title..."><div class="grid grid-cols-2 gap-3"><input class="border rounded px-3 py-2 text-sm" id="companyFilter" type="text" placeholder="Filter by company..."><select class="border rounded px-3 py-2 text-sm" id="sortBy"><option value="recent">Most Recent</option><option value="company">By Company</option><option value="title">By Title</option></select></div><button id="applyFiltersBtn" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Apply Filters</button></div><div id="jobList" class="space-y-4"><p class="text-gray-500">Loading jobs...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📋 Your Applications</h2><div id="applicationList" class="space-y-4"><p class="text-gray-500">Loading applications...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📝 Your Tasks</h2><div id="taskList" class="space-y-4"><p class="text-gray-500">Loading tasks...</p></div></div></div><div class="space-y-6"><div class="bg-white rounded-lg shadow p-6"><h3 class="text-xl font-bold mb-4">👤 My Profile</h3><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select class="w-full border rounded px-3 py-2 text-sm" id="institution"><option value="">Select institution</option></select></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="w-full border rounded px-3 py-2 text-sm" id="occupation" type="text" placeholder="e.g., Software Engineer"></div><button id="saveProfileBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Save Profile</button></div></div><div class="bg-blue-50 rounded-lg p-6 border border-blue-200"><h3 class="font-bold mb-3">💡 Tips for Success</h3><ul class="text-sm text-gray-700 space-y-2"><li>✓ Complete your profile</li><li>✓ Update your occupation</li><li>✓ Apply to relevant jobs</li><li>✓ Check tasks regularly</li></ul></div></div></div></div>';
+        const html = '<div class="py-8"><div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-8"><div class="flex justify-between items-center"><div><h1 class="text-3xl font-bold">Welcome back, ' + (this.currentUser.name || 'Student') + '! 👋</h1><p class="text-blue-100 mt-1">Campus: ' + (this.currentUser.institution || 'Not set') + '</p></div><button id="logoutBtn" class="bg-white text-blue-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">Logout</button></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"><div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500"><div class="text-sm text-gray-600">Jobs Available</div><div class="text-3xl font-bold text-blue-600" id="jobCount">0</div></div><div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500"><div class="text-sm text-gray-600">Applications Sent</div><div class="text-3xl font-bold text-green-600" id="appCount">0</div></div><div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500"><div class="text-sm text-gray-600">Tasks Pending</div><div class="text-3xl font-bold text-orange-600" id="taskCount">0</div></div><div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500"><div class="text-sm text-gray-600">Profile Strength</div><div class="text-3xl font-bold text-purple-600" id="profileStrength">0%</div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2 space-y-8"><div class="bg-white rounded-lg shadow p-6"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">💼 Available Jobs</h2><button id="refreshJobsBtn" class="text-blue-600 hover:text-blue-700 text-sm">🔄 Refresh</button></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3"><input class="w-full border rounded px-3 py-2 text-sm" id="jobSearch" type="text" placeholder="🔍 Search jobs by title..."><div class="grid grid-cols-2 gap-3"><input class="border rounded px-3 py-2 text-sm" id="companyFilter" type="text" placeholder="Filter by company..."><select class="border rounded px-3 py-2 text-sm" id="sortBy"><option value="recent">Most Recent</option><option value="company">By Company</option><option value="title">By Title</option></select></div><button id="applyFiltersBtn" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Apply Filters</button></div><div id="jobList" class="space-y-4"><p class="text-gray-500">Loading jobs...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📋 Your Applications</h2><div id="applicationList" class="space-y-4"><p class="text-gray-500">Loading applications...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📝 Your Tasks</h2><div id="taskList" class="space-y-4"><p class="text-gray-500">Loading tasks...</p></div></div></div><div class="space-y-6"><div class="bg-white rounded-lg shadow p-6"><h3 class="text-xl font-bold mb-4">👤 My Profile</h3><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select class="w-full border rounded px-3 py-2 text-sm" id="institution"><option value="">Select institution</option></select></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="w-full border rounded px-3 py-2 text-sm" id="occupation" type="text" placeholder="e.g., Software Engineer"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Skills (comma separated)</label><input class="w-full border rounded px-3 py-2 text-sm" id="skills" type="text" placeholder="e.g., JavaScript, Python, React"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Experience & Background</label><textarea class="w-full border rounded px-3 py-2 text-sm h-20" id="experience" placeholder="Describe your work experience, projects, and achievements..."></textarea></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Your CV / Resume</label><textarea class="w-full border rounded px-3 py-2 text-sm h-32" id="cvText" placeholder="Paste your CV or resume content here..."></textarea></div><button id="saveProfileBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Save Profile</button></div></div><div class="bg-blue-50 rounded-lg p-6 border border-blue-200"><h3 class="font-bold mb-3">💡 Tips for Success</h3><ul class="text-sm text-gray-700 space-y-2"><li>✓ Complete your profile</li><li>✓ Add your skills</li><li>✓ Upload your CV</li><li>✓ Apply to relevant jobs</li></ul></div></div></div></div>';
 
         document.getElementById('appContent').innerHTML = html;
 
@@ -135,6 +180,146 @@ class AppState {
         this.loadAllApplications();
         this.loadStudentsForTasks();
         this.loadAdminStats();
+    }
+
+    renderOrganizationDashboard() {
+        const html = '<div class="py-8"><div class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 rounded-lg mb-8"><div class="flex justify-between items-center"><div><h1 class="text-3xl font-bold">Organization Dashboard 🏢</h1><p class="text-emerald-100 mt-1">Welcome ' + (this.currentUser.companyName || 'Organization') + '! Manage candidates and post jobs</p></div><button id="logoutBtn" class="bg-white text-emerald-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">Logout</button></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"><div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500"><div class="text-sm text-gray-600">Total Students</div><div class="text-3xl font-bold text-blue-600" id="studentCount">0</div></div><div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500"><div class="text-sm text-gray-600">My Posted Jobs</div><div class="text-3xl font-bold text-green-600" id="myJobCount">0</div></div><div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500"><div class="text-sm text-gray-600">Received Applications</div><div class="text-3xl font-bold text-orange-600" id="appCount">0</div></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-8"><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📝 Post New Job</h2><div class="space-y-4"><input class="w-full border rounded px-3 py-2" id="jobTitle" type="text" placeholder="Job Title"><textarea class="w-full border rounded px-3 py-2 h-24" id="jobDescription" placeholder="Job Description"></textarea><textarea class="w-full border rounded px-3 py-2 h-20" id="jobRequirements" placeholder="Requirements (comma separated)"></textarea><button id="postJobBtn" class="w-full bg-emerald-600 text-white px-4 py-2 rounded font-bold hover:bg-emerald-700 transition">Post Job</button></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">🔍 Search & Filter Students</h2><div class="space-y-4"><input class="w-full border rounded px-3 py-2" id="searchStudents" type="text" placeholder="Search by name or email..."><input class="w-full border rounded px-3 py-2" id="filterSkills" type="text" placeholder="Filter by skills (comma separated)..."><button id="searchBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Search</button></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">👥 All Registered Students</h2><div id="studentList" class="space-y-3 max-h-96 overflow-y-auto"><p class="text-gray-500">Loading students...</p></div></div></div></div>';
+
+        document.getElementById('appContent').innerHTML = html;
+
+        document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+        document.getElementById('postJobBtn').addEventListener('click', () => this.postJobAsOrg());
+        document.getElementById('searchBtn').addEventListener('click', () => this.searchStudents());
+
+        this.loadStudentsForOrg();
+    }
+
+    async loadStudentsForOrg() {
+        try {
+            const users = await this.api.getUsers();
+            const students = users.filter(u => u.role === 'student');
+            const studentList = document.getElementById('studentList');
+
+            if (!studentList) return;
+
+            if (students.length === 0) {
+                studentList.innerHTML = '<p class="text-gray-500 text-center py-8">No students registered yet.</p>';
+                const studentCount = document.getElementById('studentCount');
+                if (studentCount) studentCount.textContent = '0';
+                return;
+            }
+
+            const studentCount = document.getElementById('studentCount');
+            if (studentCount) studentCount.textContent = students.length;
+
+            studentList.innerHTML = students.map(student => {
+                return '<div class="border rounded-lg p-4 hover:shadow-lg transition"><div class="flex justify-between items-start"><div class="flex-1"><h3 class="font-bold text-gray-900">' + student.name + '</h3><p class="text-sm text-gray-600">' + student.email + '</p><p class="text-sm text-gray-600">' + (student.institution || 'N/A') + ' - ' + (student.occupation || 'N/A') + '</p></div><button class="bg-emerald-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-emerald-700 transition view-cv-btn" data-student-id="' + student._id + '">View CV</button></div></div>';
+            }).join('');
+
+            document.querySelectorAll('.view-cv-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const studentId = e.target.getAttribute('data-student-id');
+                    this.viewStudentCV(studentId);
+                });
+            });
+        } catch (error) {
+            console.error('Error loading students:', error);
+        }
+    }
+
+    async viewStudentCV(studentId) {
+        try {
+            const student = await this.api.getUser(studentId);
+            const cvContent = student.cv || 'No CV uploaded yet.';
+            const cvHtml = '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div class="bg-white rounded-lg p-8 max-w-2xl max-h-96 overflow-y-auto"><div class="flex justify-between items-start mb-4"><h2 class="text-2xl font-bold">CV: ' + student.name + '</h2><button id="closeCVModal" class="text-gray-600 hover:text-gray-900 text-2xl">&times;</button></div><div class="mb-4"><h3 class="font-bold text-gray-900">Contact:</h3><p class="text-gray-700">' + student.email + '</p></div><div class="mb-4"><h3 class="font-bold text-gray-900">Institution:</h3><p class="text-gray-700">' + (student.institution || 'N/A') + '</p></div><div class="mb-4"><h3 class="font-bold text-gray-900">Looking For:</h3><p class="text-gray-700">' + (student.occupation || 'N/A') + '</p></div>' + (student.skills && student.skills.length ? '<div class="mb-4"><h3 class="font-bold text-gray-900">Skills:</h3><div class="flex flex-wrap gap-2">' + student.skills.map(skill => '<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">' + skill + '</span>').join('') + '</div></div>' : '') + (student.experience ? '<div class="mb-4"><h3 class="font-bold text-gray-900">Experience:</h3><p class="text-gray-700 whitespace-pre-wrap">' + student.experience + '</p></div>' : '') + '<div class="mb-4"><h3 class="font-bold text-gray-900">CV Document:</h3><p class="text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-gray-50 p-3 rounded">' + (cvContent === 'No CV uploaded yet.' ? 'No CV uploaded yet.' : cvContent) + '</p></div></div></div>';
+
+            document.body.insertAdjacentHTML('beforeend', cvHtml);
+            document.getElementById('closeCVModal').addEventListener('click', () => {
+                const modal = document.querySelector('.fixed');
+                if (modal) modal.remove();
+            });
+
+            document.querySelector('.fixed').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    e.target.remove();
+                }
+            });
+        } catch (error) {
+            alert('Error loading student CV: ' + error.message);
+        }
+    }
+
+    async postJobAsOrg() {
+        const title = document.getElementById('jobTitle').value;
+        const description = document.getElementById('jobDescription').value;
+        const requirementsStr = document.getElementById('jobRequirements').value;
+
+        if (!title || !description) {
+            alert('Job title and description are required');
+            return;
+        }
+
+        const requirements = requirementsStr.split(',').map(r => r.trim()).filter(r => r);
+
+        try {
+            await this.api.createJob({
+                title,
+                company: this.currentUser.companyName || 'Organization',
+                description,
+                requirements
+            });
+
+            alert('Job posted successfully!');
+            document.getElementById('jobTitle').value = '';
+            document.getElementById('jobDescription').value = '';
+            document.getElementById('jobRequirements').value = '';
+            this.loadStudentsForOrg();
+        } catch (error) {
+            alert('Error posting job: ' + error.message);
+        }
+    }
+
+    async searchStudents() {
+        const searchTerm = document.getElementById('searchStudents').value.toLowerCase();
+        const skillsFilter = document.getElementById('filterSkills').value.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
+
+        try {
+            const users = await this.api.getUsers();
+            let filtered = users.filter(u => u.role === 'student');
+
+            if (searchTerm) {
+                filtered = filtered.filter(u => 
+                    u.name.toLowerCase().includes(searchTerm) || 
+                    u.email.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (skillsFilter.length > 0) {
+                filtered = filtered.filter(u => {
+                    const userSkills = (u.skills || []).map(s => s.toLowerCase());
+                    return skillsFilter.some(skill => userSkills.includes(skill));
+                });
+            }
+
+            const studentList = document.getElementById('studentList');
+            if (filtered.length === 0) {
+                studentList.innerHTML = '<p class="text-gray-500 text-center py-8">No students found matching your criteria.</p>';
+                return;
+            }
+
+            studentList.innerHTML = filtered.map(student => {
+                return '<div class="border rounded-lg p-4 hover:shadow-lg transition"><div class="flex justify-between items-start"><div class="flex-1"><h3 class="font-bold text-gray-900">' + student.name + '</h3><p class="text-sm text-gray-600">' + student.email + '</p><p class="text-sm text-gray-600">' + (student.institution || 'N/A') + ' - ' + (student.occupation || 'N/A') + '</p>' + (student.skills && student.skills.length ? '<div class="mt-2 flex flex-wrap gap-1">' + student.skills.map(skill => '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">' + skill + '</span>').join('') + '</div>' : '') + '</div><button class="bg-emerald-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-emerald-700 transition view-cv-btn" data-student-id="' + student._id + '">View CV</button></div></div>';
+            }).join('');
+
+            document.querySelectorAll('.view-cv-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const studentId = e.target.getAttribute('data-student-id');
+                    this.viewStudentCV(studentId);
+                });
+            });
+        } catch (error) {
+            alert('Error searching students: ' + error.message);
+        }
     }
 
     async loadJobs() {
@@ -326,10 +511,26 @@ class AppState {
         try {
             const institution = document.getElementById('institution').value;
             const occupation = document.getElementById('occupation').value;
+            const skillsStr = document.getElementById('skills').value;
+            const experience = document.getElementById('experience').value;
+            const cv = document.getElementById('cvText').value;
 
-            await this.api.updateUserProfile(this.currentUser.id, { institution, occupation });
+            const skills = skillsStr.split(',').map(s => s.trim()).filter(s => s);
+
+            await this.api.updateUserProfile(this.currentUser.id, { 
+                institution, 
+                occupation, 
+                skills, 
+                experience, 
+                cv,
+                cvFilename: 'CV_' + (this.currentUser.name || 'Student').replace(/\s+/g, '_') + '.txt'
+            });
+
             this.currentUser.institution = institution;
             this.currentUser.occupation = occupation;
+            this.currentUser.skills = skills;
+            this.currentUser.experience = experience;
+            this.currentUser.cv = cv;
 
             alert('Profile updated successfully!');
             this.updateProfileStrength();
@@ -340,10 +541,11 @@ class AppState {
 
     updateProfileStrength() {
         let strength = 0;
-        if (this.currentUser && this.currentUser.name) strength += 25;
-        if (this.currentUser && this.currentUser.institution) strength += 25;
-        if (this.currentUser && this.currentUser.occupation) strength += 25;
-        if (this.currentUser && this.currentUser.profileImage) strength += 25;
+        if (this.currentUser && this.currentUser.name) strength += 20;
+        if (this.currentUser && this.currentUser.institution) strength += 20;
+        if (this.currentUser && this.currentUser.occupation) strength += 20;
+        if (this.currentUser && this.currentUser.skills && this.currentUser.skills.length > 0) strength += 20;
+        if (this.currentUser && this.currentUser.cv) strength += 20;
 
         const el = document.getElementById('profileStrength');
         if (el) el.textContent = strength + '%';
