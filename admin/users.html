@@ -22,6 +22,11 @@
     <p class="muted">This page loads `/api/users` using the saved token in `localStorage.authToken`. You must be logged in as an admin. <a href="/index.html" class="btn" style="margin-left:12px">Open App</a></p>
 
     <div id="status" class="notice">Checking authentication...</div>
+    <div style="margin-bottom:16px">
+      <button id="bulkApproveBtn" class="btn" style="background:#059669">Bulk Approve Selected</button>
+      <button id="bulkRejectBtn" class="btn" style="background:#dc2626;margin-left:8px">Bulk Reject Selected</button>
+      <input id="userSearch" type="text" placeholder="Search by name/email..." style="margin-left:16px;padding:6px 10px;border-radius:4px;border:1px solid #ddd">
+    </div>
     <div id="usersWrap"></div>
   </div>
 
@@ -38,40 +43,150 @@
 
       status.innerHTML = 'Loading users...';
 
-      try {
-        const res = await fetch('http://localhost:3000/api/users', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
+        try {
+          const res = await fetch('http://localhost:3000/api/users', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
 
-        if (!res.ok) {
-          const data = await res.json().catch(()=>({message:'Unable to parse error'}));
-          status.innerHTML = 'Error loading users: ' + (data.message || res.statusText);
-          return;
-        }
+          if (!res.ok) {
+            const data = await res.json().catch(()=>({message:'Unable to parse error'}));
+            status.innerHTML = 'Error loading users: ' + (data.message || res.statusText);
+            return;
+          }
 
-        const users = await res.json();
-        status.innerHTML = 'Found ' + users.length + ' users';
+          const data = await res.json();
+          const users = Array.isArray(data) ? data : (data.users || []);
+          status.innerHTML = 'Found ' + users.length + ' users';
 
-        if (!users.length) {
-          wrap.innerHTML = '<p class="muted">No users found.</p>';
-          return;
-        }
+          if (!users.length) {
+            wrap.innerHTML = '<p class="muted">No users found.</p>';
+            return;
+          }
 
-        const rows = users.map(u => `<tr>
-            <td>${u._id}</td>
-            <td>${u.name || ''}</td>
-            <td>${u.email || ''}</td>
-            <td>${u.role || ''}</td>
-            <td>${u.institution || ''}</td>
-            <td>${u.occupation || ''}</td>
-            <td>${new Date(u.createdAt || 0).toLocaleString()}</td>
-          </tr>`).join('');
+          const rows = users.map(u => `<tr>
+              <td><input type="checkbox" class="userSelect" value="${u._id}"></td>
+              <td style="max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${u._id}</td>
+              <td>${u.name || ''}</td>
+              <td>${u.email || ''}</td>
+              <td>${u.role || ''}</td>
+              <td>${u.institution || ''}</td>
+              <td>${u.occupation || ''}</td>
+              <td>${new Date(u.createdAt || 0).toLocaleString()}</td>
+              <td>
+                <a class="btn" href="#" data-id="${u._id}" data-action="view">View CV</a>
+                <a class="btn" href="#" data-id="${u._id}" data-action="approve" style="background:#059669;margin-left:6px">Approve</a>
+                <a class="btn" href="#" data-id="${u._id}" data-action="reject" style="background:#dc2626;margin-left:6px">Reject</a>
+              </td>
+            </tr>`).join('');
 
-        wrap.innerHTML = `
-          <table>
-            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Occupation</th><th>Created</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>`;
+          wrap.innerHTML = `
+            <table>
+              <thead><tr><th><input type="checkbox" id="selectAllUsers"></th><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Occupation</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>`;
+          // Select all checkbox
+          const selectAll = document.getElementById('selectAllUsers');
+          if (selectAll) {
+            selectAll.addEventListener('change', function() {
+              document.querySelectorAll('.userSelect').forEach(cb => {
+                cb.checked = selectAll.checked;
+              });
+            });
+          }
+
+          // Bulk approve/reject
+          document.getElementById('bulkApproveBtn').onclick = async function() {
+            const selected = Array.from(document.querySelectorAll('.userSelect:checked')).map(cb => cb.value);
+            if (!selected.length) return alert('No users selected');
+            const notes = prompt('Enter review notes for bulk approve (optional):');
+            for (const id of selected) {
+              await fetch(`http://localhost:3000/api/users/${id}/approve-document`, {
+                method: 'PUT',
+                headers: {
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ approved: true, reviewNotes: notes || '' })
+              });
+            }
+            alert('Bulk approve done');
+            loadUsers();
+          };
+          document.getElementById('bulkRejectBtn').onclick = async function() {
+            const selected = Array.from(document.querySelectorAll('.userSelect:checked')).map(cb => cb.value);
+            if (!selected.length) return alert('No users selected');
+            const notes = prompt('Enter review notes for bulk reject (optional):');
+            for (const id of selected) {
+              await fetch(`http://localhost:3000/api/users/${id}/approve-document`, {
+                method: 'PUT',
+                headers: {
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ approved: false, reviewNotes: notes || '' })
+              });
+            }
+            alert('Bulk reject done');
+            loadUsers();
+          };
+
+          // Search filter
+          document.getElementById('userSearch').oninput = function() {
+            const q = this.value.toLowerCase();
+            const filtered = users.filter(u => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+            // re-render table with filtered users
+            const rows = filtered.map(u => `<tr>
+              <td><input type="checkbox" class="userSelect" value="${u._id}"></td>
+              <td style="max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${u._id}</td>
+              <td>${u.name || ''}</td>
+              <td>${u.email || ''}</td>
+              <td>${u.role || ''}</td>
+              <td>${u.institution || ''}</td>
+              <td>${u.occupation || ''}</td>
+              <td>${new Date(u.createdAt || 0).toLocaleString()}</td>
+              <td>
+                <a class="btn" href="#" data-id="${u._id}" data-action="view">View CV</a>
+                <a class="btn" href="#" data-id="${u._id}" data-action="approve" style="background:#059669;margin-left:6px">Approve</a>
+                <a class="btn" href="#" data-id="${u._id}" data-action="reject" style="background:#dc2626;margin-left:6px">Reject</a>
+              </td>
+            </tr>`).join('');
+            wrap.innerHTML = `<table>
+              <thead><tr><th><input type="checkbox" id="selectAllUsers"></th><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Occupation</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>`;
+          };
+
+          // Attach event handlers for action buttons
+          wrap.querySelectorAll('a[data-action]').forEach(el => {
+            el.addEventListener('click', async (e) => {
+              e.preventDefault();
+              const id = el.getAttribute('data-id');
+              const action = el.getAttribute('data-action');
+              if (action === 'view') {
+                // open document in new tab
+                window.open(`http://localhost:3000/api/users/${id}/document`, '_blank');
+              } else if (action === 'approve' || action === 'reject') {
+                const approved = action === 'approve';
+                const notes = prompt('Enter review notes (optional):');
+                try {
+                  const resp = await fetch(`http://localhost:3000/api/users/${id}/approve-document`, {
+                    method: 'PUT',
+                    headers: {
+                      'Authorization': 'Bearer ' + token,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ approved, reviewNotes: notes || '' })
+                  });
+                  const r = await resp.json();
+                  if (!resp.ok) throw new Error(r.message || 'Action failed');
+                  alert(r.message || 'Done');
+                  loadUsers();
+                } catch (err) {
+                  alert('Error: ' + (err.message || err));
+                }
+              }
+            });
+          });
 
       } catch (err) {
         status.innerHTML = 'Request failed: ' + (err.message || err);

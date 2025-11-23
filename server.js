@@ -1,3 +1,16 @@
+// S3 config
+let s3 = null;
+let useS3 = false;
+if (process.env.USE_S3 === 'true') {
+  const AWS = require('aws-sdk');
+  AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION || 'us-east-1'
+  });
+  s3 = new AWS.S3();
+  useS3 = true;
+}
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -5,14 +18,96 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { Readable } = require('stream');
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// ==================== MIDDLEWARE ====================
+
+// CORS configuration - more restrictive for production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:8000',
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: 'Too many authentication attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development'
+});
+
+// General API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 100 requests per minute
+  message: 'Too many requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development'
+});
+
+app.use('/api/', apiLimiter);
+
+// Multer configuration for file uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Use memory storage for multer so we can route uploads to GridFS or disk as needed
+const memoryStorage = multer.memoryStorage();
+const upload = multer({
+  storage: memoryStorage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max for CVs
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF, DOCX, DOC, and TXT are allowed'));
+    }
+  }
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static(uploadsDir));
+
+// GridFS bucket placeholder - will be created after DB connection
+let gridfsBucket = null;
+
+// Helper: initialize GridFS if requested
+async function initGridFS() {
+  const useGridFS = process.env.USE_GRIDFS === 'true';
+  if (!useGridFS) return;
+  try {
+    await mongoose.connection; // ensure connection
+    const db = mongoose.connection.db;
+    gridfsBucket = new mongoose.mongo.GridFSBucket(db, { bucketName: 'uploads' });
+    console.log('✓ GridFS bucket initialized');
+  } catch (err) {
+    console.warn('✗ GridFS initialization failed:', err.message);
+    gridfsBucket = null;
+  }
+}
 
 // MongoDB Connection (try real DB first, fall back to in-memory)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nikhire';
@@ -21,6 +116,8 @@ async function connectDB() {
   try {
     await mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log('✓ MongoDB connected');
+    // initialize GridFS if configured
+    await initGridFS();
     return { type: 'real', uri: MONGODB_URI };
   } catch (err) {
     console.warn('✗ MongoDB connection failed:', err.message);
@@ -30,6 +127,7 @@ async function connectDB() {
     const uri = mongod.getUri();
     await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log('✓ Connected to in-memory MongoDB');
+    await initGridFS();
     return { type: 'memory', uri };
   }
 }
@@ -46,7 +144,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    lowercase: true
+    lowercase: true,
+    index: true
   },
   password: {
     type: String,
@@ -55,9 +154,13 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['student', 'admin', 'organization'],
-    default: 'student'
+    default: 'student',
+    index: true
   },
-  institution: String,
+  institution: {
+    type: String,
+    index: true
+  },
   occupation: String,
   profileImage: String,
   cv: String,
@@ -65,11 +168,39 @@ const userSchema = new mongoose.Schema({
   skills: [String],
   experience: String,
   companyName: String,
+  documentSubmittedAt: Date,
+  documentApproved: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  documentReviewNotes: String,
+  cvPath: String,
+  lastLogin: Date,
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    index: true
   }
 });
+
+// Refresh token (server-side stored for revocation/rotation)
+userSchema.add({
+  refreshTokenHash: {
+    type: String,
+    default: null
+  }
+});
+
+// Create compound indexes for efficient querying
+userSchema.index({ role: 1, documentApproved: 1 });
+userSchema.index({ institution: 1, role: 1 });
+userSchema.index({ createdAt: -1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -201,99 +332,115 @@ const Institution = mongoose.model('Institution', institutionSchema);
 // ==================== MIDDLEWARE ====================
 
 // Verify JWT Token
+// ==================== MIDDLEWARE ====================
+
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
+    return res.status(401).json({ message: 'No token provided', success: false });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
     req.userId = decoded.userId;
+    req.userRole = decoded.role;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired', success: false });
+    }
+    res.status(401).json({ message: 'Invalid token', success: false });
   }
 };
 
-// ==================== AUTHENTICATION ROUTES ====================
+// Admin-only middleware
+const verifyAdmin = (req, res, next) => {
+  if (req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required', success: false });
+  }
+  next();
+};
+
+// Admin or Organization middleware
+const verifyAdminOrOrg = (req, res, next) => {
+  if (req.userRole !== 'admin' && req.userRole !== 'organization') {
+    return res.status(403).json({ message: 'Admin or Organization access required', success: false });
+  }
+  next();
+};
 
 // Register User
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, role, institution, occupation, profileImage, companyName } = req.body;
 
+    // Validation
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Missing required fields' });
+      return res.status(400).json({ 
+        message: 'Name, email and password are required', 
+        success: false 
+      });
     }
 
-    const existingUser = await User.findOne({ email });
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 6 characters long', 
+        success: false 
+      });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ 
+        message: 'Email already registered', 
+        success: false 
+      });
     }
 
+    // Create user
     const user = new User({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password,
       role: role || 'student',
       institution: institution || '',
       occupation: occupation || '',
       profileImage: profileImage || '',
-      companyName: companyName || ''
+      companyName: companyName || '',
+      isActive: true
     });
 
     await user.save();
-
+    // Create JWT token with role
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'your_secret_key',
       { expiresIn: '7d' }
     );
+
+    // Create refresh token and persist hash for rotation/revocation
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || (process.env.JWT_SECRET || 'your_secret_key'),
+      { expiresIn: '30d' }
+    );
+    const refreshTokenHash = await bcryptjs.hash(refreshToken, 10);
+    user.refreshTokenHash = refreshTokenHash;
+    await user.save();
+
+    // Set HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
 
     res.status(201).json({
       message: 'User registered successfully',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Login User
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'your_secret_key',
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      message: 'Login successful',
+      success: true,
       token,
       user: {
         id: user._id,
@@ -301,11 +448,107 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email,
         role: user.role,
         institution: user.institution,
-        occupation: user.occupation
+        occupation: user.occupation,
+        companyName: user.companyName
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      message: error.message || 'Registration failed', 
+      success: false 
+    });
+  }
+});
+
+// Login User
+app.post('/api/auth/login', authLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email and password are required', 
+        success: false 
+      });
+    }
+
+    // Find user by email (case-insensitive)
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(401).json({ 
+        message: 'Invalid email or password', 
+        success: false 
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(401).json({ 
+        message: 'Account is inactive', 
+        success: false 
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        message: 'Invalid email or password', 
+        success: false 
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Create JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || 'your_secret_key',
+      { expiresIn: '7d' }
+    );
+
+    // Create and persist refresh token
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || (process.env.JWT_SECRET || 'your_secret_key'),
+      { expiresIn: '30d' }
+    );
+    const refreshTokenHash = await bcryptjs.hash(refreshToken, 10);
+    user.refreshTokenHash = refreshTokenHash;
+    await user.save();
+
+    // Set HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({
+      message: 'Login successful',
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        institution: user.institution,
+        occupation: user.occupation,
+        companyName: user.companyName
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      message: error.message || 'Login failed', 
+      success: false 
+    });
   }
 });
 
@@ -313,21 +556,58 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
-    res.json(user);
+    res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, success: false });
   }
 });
 
 // ==================== USER ROUTES ====================
 
-// Get All Users (Admin)
-app.get('/api/users', verifyToken, async (req, res) => {
+// Get All Users (Admin/Organization - with pagination, filtering, search)
+app.get('/api/users', verifyToken, verifyAdminOrOrg, async (req, res) => {
   try {
-    const users = await User.find().select('-password');
-    res.json(users);
+    const { page = 1, limit = 20, role, status, q, sort = '-createdAt' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build filter
+    const filter = {};
+    if (role) filter.role = role;
+    if (status === 'approved') filter.documentApproved = true;
+    if (status === 'pending') filter.documentApproved = false;
+    
+    // Search in name and email
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+        { occupation: { $regex: q, $options: 'i' } }
+      ];
+    }
+
+    // Execute query with pagination
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select('-password')
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      User.countDocuments(filter)
+    ]);
+
+    res.json({
+      success: true,
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, success: false });
   }
 });
 
@@ -357,10 +637,217 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
 
     res.json({
       message: 'Profile updated successfully',
+      success: true,
       user
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// Upload CV/Document (Student)
+app.post('/api/users/:id/upload-document', verifyToken, upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ message: 'No file uploaded', success: false });
+    }
+
+    const originalName = req.file.originalname;
+    const mimeType = req.file.mimetype;
+
+    let savedPath = null;
+    let gridfsId = null;
+    let s3Url = null;
+
+    if (useS3 && s3) {
+      // Upload to S3
+      const s3Key = `documents/${req.params.id}/${Date.now()}-${originalName}`;
+      const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: s3Key,
+        Body: req.file.buffer,
+        ContentType: mimeType,
+        ACL: 'private'
+      };
+      try {
+        const result = await s3.upload(params).promise();
+        s3Url = result.Location;
+        savedPath = s3Url;
+      } catch (err) {
+        return res.status(500).json({ message: 'S3 upload failed: ' + err.message, success: false });
+      }
+    } else if (gridfsBucket) {
+      // Write buffer to GridFS
+      const uploadStream = gridfsBucket.openUploadStream(originalName, { contentType: mimeType });
+      const readable = new Readable();
+      readable.push(req.file.buffer);
+      readable.push(null);
+      readable.pipe(uploadStream);
+
+      await new Promise((resolve, reject) => {
+        uploadStream.on('finish', () => {
+          gridfsId = uploadStream.id;
+          resolve();
+        });
+        uploadStream.on('error', reject);
+      });
+
+      savedPath = gridfsId ? gridfsId.toString() : null;
+    } else {
+      // Fallback: write to disk
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const filename = 'document-' + uniqueSuffix + path.extname(originalName);
+      const fullPath = path.join(uploadsDir, filename);
+      fs.writeFileSync(fullPath, req.file.buffer);
+      savedPath = fullPath;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        cvFilename: originalName,
+        cvPath: savedPath,
+        documentSubmittedAt: new Date(),
+        documentApproved: false
+      },
+      { new: true }
+    ).select('-password');
+
+    res.json({
+      message: 'Document uploaded successfully',
+      success: true,
+      user,
+      file: {
+        originalName,
+        size: req.file.size,
+        stored: savedPath,
+        gridfs: gridfsId ? true : false,
+        s3: !!s3Url,
+        s3Url
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// Approve/Reject Document (Admin/Organization)
+app.put('/api/users/:id/approve-document', verifyToken, verifyAdminOrOrg, async (req, res) => {
+  try {
+    const { approved, reviewNotes } = req.body;
+
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ message: 'Approval status is required', success: false });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        documentApproved: approved,
+        documentReviewNotes: reviewNotes || null
+      },
+      { new: true }
+    ).select('-password');
+
+    res.json({
+      message: `Document ${approved ? 'approved' : 'rejected'} successfully`,
+      success: true,
+      user
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// Serve user document (stream from GridFS or static file)
+app.get('/api/users/:id/document', verifyToken, verifyAdminOrOrg, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('cvFilename cvPath');
+    if (!user) return res.status(404).json({ message: 'User not found', success: false });
+
+    if (gridfsBucket && user.cvPath) {
+      // cvPath stored as GridFS file id
+      const fileId = new mongoose.Types.ObjectId(user.cvPath);
+      const downloadStream = gridfsBucket.openDownloadStream(fileId);
+      res.setHeader('Content-Disposition', `attachment; filename="${user.cvFilename || 'document'}"`);
+      downloadStream.pipe(res);
+      downloadStream.on('error', err => res.status(500).json({ message: err.message, success: false }));
+      return;
+    }
+
+    // Fallback to static file
+    if (user.cvPath && fs.existsSync(user.cvPath)) {
+      return res.download(user.cvPath, user.cvFilename || undefined);
+    }
+
+    res.status(404).json({ message: 'No document found for user', success: false });
+  } catch (error) {
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// ==================== REFRESH TOKENS & LOGOUT ====================
+
+// Refresh access token
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    // Get refresh token from cookie or body
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    if (!refreshToken) return res.status(400).json({ message: 'Refresh token required', success: false });
+
+    // Verify refresh token signature
+    let payload;
+    try {
+      payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || (process.env.JWT_SECRET || 'your_secret_key'));
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid refresh token', success: false });
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user || !user.refreshTokenHash) {
+      return res.status(401).json({ message: 'Refresh token invalid or revoked', success: false });
+    }
+    const match = await bcryptjs.compare(refreshToken, user.refreshTokenHash);
+    if (!match) {
+      return res.status(401).json({ message: 'Refresh token invalid or revoked', success: false });
+    }
+
+    // Rotate refresh token: issue new access token + new refresh token
+    const newToken = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'your_secret_key', { expiresIn: '7d' });
+    const newRefreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || (process.env.JWT_SECRET || 'your_secret_key'),
+      { expiresIn: '30d' }
+    );
+    user.refreshTokenHash = await bcryptjs.hash(newRefreshToken, 10);
+    await user.save();
+
+    // Set new HttpOnly cookie
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, token: newToken });
+  } catch (error) {
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// Logout (revoke refresh token)
+app.post('/api/auth/logout', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (user) {
+      user.refreshTokenHash = null;
+      await user.save();
+    }
+    res.clearCookie('refreshToken');
+    res.json({ success: true, message: 'Logged out' });
+  } catch (error) {
+    res.status(500).json({ message: error.message, success: false });
   }
 });
 

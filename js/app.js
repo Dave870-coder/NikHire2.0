@@ -148,7 +148,8 @@ class AppState {
     }
 
     renderStudentDashboard() {
-        const html = '<div class="py-8"><div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-8"><div class="flex justify-between items-center"><div><h1 class="text-3xl font-bold">Welcome back, ' + (this.currentUser.name || 'Student') + '! 👋</h1><p class="text-blue-100 mt-1">Campus: ' + (this.currentUser.institution || 'Not set') + '</p></div><button id="logoutBtn" class="bg-white text-blue-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">Logout</button></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"><div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500"><div class="text-sm text-gray-600">Jobs Available</div><div class="text-3xl font-bold text-blue-600" id="jobCount">0</div></div><div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500"><div class="text-sm text-gray-600">Applications Sent</div><div class="text-3xl font-bold text-green-600" id="appCount">0</div></div><div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500"><div class="text-sm text-gray-600">Tasks Pending</div><div class="text-3xl font-bold text-orange-600" id="taskCount">0</div></div><div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500"><div class="text-sm text-gray-600">Profile Strength</div><div class="text-3xl font-bold text-purple-600" id="profileStrength">0%</div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2 space-y-8"><div class="bg-white rounded-lg shadow p-6"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">💼 Available Jobs</h2><button id="refreshJobsBtn" class="text-blue-600 hover:text-blue-700 text-sm">🔄 Refresh</button></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3"><input class="w-full border rounded px-3 py-2 text-sm" id="jobSearch" type="text" placeholder="🔍 Search jobs by title..."><div class="grid grid-cols-2 gap-3"><input class="border rounded px-3 py-2 text-sm" id="companyFilter" type="text" placeholder="Filter by company..."><select class="border rounded px-3 py-2 text-sm" id="sortBy"><option value="recent">Most Recent</option><option value="company">By Company</option><option value="title">By Title</option></select></div><button id="applyFiltersBtn" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Apply Filters</button></div><div id="jobList" class="space-y-4"><p class="text-gray-500">Loading jobs...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📋 Your Applications</h2><div id="applicationList" class="space-y-4"><p class="text-gray-500">Loading applications...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📝 Your Tasks</h2><div id="taskList" class="space-y-4"><p class="text-gray-500">Loading tasks...</p></div></div></div><div class="space-y-6"><div class="bg-white rounded-lg shadow p-6"><h3 class="text-xl font-bold mb-4">👤 My Profile</h3><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select class="w-full border rounded px-3 py-2 text-sm" id="institution"><option value="">Select institution</option></select></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="w-full border rounded px-3 py-2 text-sm" id="occupation" type="text" placeholder="e.g., Software Engineer"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Skills (comma separated)</label><input class="w-full border rounded px-3 py-2 text-sm" id="skills" type="text" placeholder="e.g., JavaScript, Python, React"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Experience & Background</label><textarea class="w-full border rounded px-3 py-2 text-sm h-20" id="experience" placeholder="Describe your work experience, projects, and achievements..."></textarea></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Your CV / Resume</label><textarea class="w-full border rounded px-3 py-2 text-sm h-32" id="cvText" placeholder="Paste your CV or resume content here..."></textarea></div><button id="saveProfileBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Save Profile</button></div></div><div class="bg-blue-50 rounded-lg p-6 border border-blue-200"><h3 class="font-bold mb-3">💡 Tips for Success</h3><ul class="text-sm text-gray-700 space-y-2"><li>✓ Complete your profile</li><li>✓ Add your skills</li><li>✓ Upload your CV</li><li>✓ Apply to relevant jobs</li></ul></div></div></div></div>';
+        const docStatus = this.currentUser.documentApproved ? '<span class="text-green-600 font-bold">✓ Approved</span>' : (this.currentUser.documentSubmittedAt ? '<span class="text-orange-600 font-bold">⏳ Pending Review</span>' : '<span class="text-red-600 font-bold">✗ Not Submitted</span>');
+        const html = '<div class="py-8"><div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-8"><div class="flex justify-between items-center"><div><h1 class="text-3xl font-bold">Welcome back, ' + (this.currentUser.name || 'Student') + '! 👋</h1><p class="text-blue-100 mt-1">Campus: ' + (this.currentUser.institution || 'Not set') + '</p></div><button id="logoutBtn" class="bg-white text-blue-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition">Logout</button></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"><div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500"><div class="text-sm text-gray-600">Jobs Available</div><div class="text-3xl font-bold text-blue-600" id="jobCount">0</div></div><div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500"><div class="text-sm text-gray-600">Applications Sent</div><div class="text-3xl font-bold text-green-600" id="appCount">0</div></div><div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500"><div class="text-sm text-gray-600">Tasks Pending</div><div class="text-3xl font-bold text-orange-600" id="taskCount">0</div></div><div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500"><div class="text-sm text-gray-600">Document Status</div><div class="text-sm font-bold text-purple-600">' + docStatus + '</div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2 space-y-8"><div class="bg-white rounded-lg shadow p-6"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">💼 Available Jobs</h2><button id="refreshJobsBtn" class="text-blue-600 hover:text-blue-700 text-sm">🔄 Refresh</button></div><div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3"><input class="w-full border rounded px-3 py-2 text-sm" id="jobSearch" type="text" placeholder="🔍 Search jobs by title..."><div class="grid grid-cols-2 gap-3"><input class="border rounded px-3 py-2 text-sm" id="companyFilter" type="text" placeholder="Filter by company..."><select class="border rounded px-3 py-2 text-sm" id="sortBy"><option value="recent">Most Recent</option><option value="company">By Company</option><option value="title">By Title</option></select></div><button id="applyFiltersBtn" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Apply Filters</button></div><div id="jobList" class="space-y-4"><p class="text-gray-500">Loading jobs...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📋 Your Applications</h2><div id="applicationList" class="space-y-4"><p class="text-gray-500">Loading applications...</p></div></div><div class="bg-white rounded-lg shadow p-6"><h2 class="text-2xl font-bold mb-4">📝 Your Tasks</h2><div id="taskList" class="space-y-4"><p class="text-gray-500">Loading tasks...</p></div></div></div><div class="space-y-6"><div class="bg-white rounded-lg shadow p-6"><h3 class="text-xl font-bold mb-4">👤 My Profile</h3><div class="space-y-4"><div><label class="block text-gray-700 text-sm font-bold mb-2">Institution</label><select class="w-full border rounded px-3 py-2 text-sm" id="institution"><option value="">Select institution</option></select></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Looking For</label><input class="w-full border rounded px-3 py-2 text-sm" id="occupation" type="text" placeholder="e.g., Software Engineer"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Skills (comma separated)</label><input class="w-full border rounded px-3 py-2 text-sm" id="skills" type="text" placeholder="e.g., JavaScript, Python, React"></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Experience & Background</label><textarea class="w-full border rounded px-3 py-2 text-sm h-20" id="experience" placeholder="Describe your work experience, projects, and achievements..."></textarea></div><div><label class="block text-gray-700 text-sm font-bold mb-2">Your CV / Resume</label><textarea class="w-full border rounded px-3 py-2 text-sm h-32" id="cvText" placeholder="Paste your CV or resume content here..."></textarea></div><div><label class="block text-gray-700 text-sm font-bold mb-2">📄 Upload Official Document (PDF, DOCX)</label><input class="w-full border rounded px-3 py-2 text-sm" id="documentInput" type="file" accept=".pdf,.docx,.doc,.txt"></div><button id="saveProfileBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 transition">Save Profile & Upload Document</button></div></div><div class="bg-blue-50 rounded-lg p-6 border border-blue-200"><h3 class="font-bold mb-3">💡 Tips for Success</h3><ul class="text-sm text-gray-700 space-y-2"><li>✓ Complete your profile</li><li>✓ Add your skills</li><li>✓ Upload official document</li><li>✓ Apply to relevant jobs</li></ul></div></div></div></div>';
 
         document.getElementById('appContent').innerHTML = html;
 
@@ -411,10 +412,29 @@ class AppState {
 
     async loadUsers() {
         try {
-            const users = await this.api.getUsers();
-            const userList = document.getElementById('userList');
+            const page = document.getElementById('userPage') ? parseInt(document.getElementById('userPage').value) || 1 : 1;
+            const status = document.getElementById('userStatus') ? document.getElementById('userStatus').value : '';
+            const searchQ = document.getElementById('userSearch') ? document.getElementById('userSearch').value : '';
+            
+            const query = new URLSearchParams({
+                page,
+                limit: 20,
+                status: status || undefined,
+                q: searchQ || undefined
+            });
 
+            const response = await fetch(`${this.api.baseURL}/api/users?${query}`, {
+                headers: this.api.getHeaders()
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            const userList = document.getElementById('userList');
             if (!userList) return;
+
+            const users = data.users || data;
+            const pagination = data.pagination;
 
             if (users.length === 0) {
                 userList.innerHTML = '<p class="text-gray-500">No users found.</p>';
@@ -422,9 +442,40 @@ class AppState {
             }
 
             const userCount = document.getElementById('userCount');
-            if (userCount) userCount.textContent = users.length;
+            if (userCount && pagination) userCount.textContent = pagination.total;
 
-            userList.innerHTML = users.map(user => '<div class="p-3 bg-gray-50 rounded border"><p class="font-bold text-gray-900">' + user.name + '</p><p class="text-sm text-gray-600">' + user.email + '</p><p class="text-xs text-gray-500">' + (user.role || 'student') + ' • ' + (user.institution || 'N/A') + '</p></div>').join('');
+            userList.innerHTML = users.map(user => {
+                const docBadge = user.documentApproved ? '<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">✓ Approved</span>' : (user.documentSubmittedAt ? '<span class="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">⏳ Pending</span>' : '<span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">✗ No Doc</span>');
+                return '<div class="p-3 bg-gray-50 rounded border"><div class="flex justify-between items-start"><div><p class="font-bold text-gray-900">' + user.name + '</p><p class="text-sm text-gray-600">' + user.email + '</p><p class="text-xs text-gray-500">' + (user.role || 'student') + ' • ' + (user.institution || 'N/A') + '</p></div><div>' + docBadge + '</div></div>' + (user.role === 'student' && user.documentSubmittedAt ? '<button class="mt-2 text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 view-doc-btn" data-user-id="' + user._id + '" data-user-name="' + user.name + '">Review Document</button>' : '') + '</div>';
+            }).join('');
+
+            // Add pagination controls
+            if (pagination && pagination.pages > 1) {
+                userList.innerHTML += '<div class="mt-4 flex justify-center gap-2"><button id="prevPage" class="px-3 py-1 bg-gray-300 rounded">← Previous</button><span class="text-sm text-gray-600">Page ' + pagination.page + ' of ' + pagination.pages + '</span><button id="nextPage" class="px-3 py-1 bg-gray-300 rounded">Next →</button></div>';
+                
+                document.getElementById('prevPage').addEventListener('click', () => {
+                    if (page > 1) {
+                        if (document.getElementById('userPage')) document.getElementById('userPage').value = page - 1;
+                        this.loadUsers();
+                    }
+                });
+
+                document.getElementById('nextPage').addEventListener('click', () => {
+                    if (page < pagination.pages) {
+                        if (document.getElementById('userPage')) document.getElementById('userPage').value = page + 1;
+                        this.loadUsers();
+                    }
+                });
+            }
+
+            // Add event listeners to review buttons
+            document.querySelectorAll('.view-doc-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-user-id');
+                    const userName = e.target.getAttribute('data-user-name');
+                    this.showDocumentReviewModal(userId, userName);
+                });
+            });
         } catch (error) {
             console.error('Error loading users:', error);
         }
@@ -514,9 +565,11 @@ class AppState {
             const skillsStr = document.getElementById('skills').value;
             const experience = document.getElementById('experience').value;
             const cv = document.getElementById('cvText').value;
+            const documentInput = document.getElementById('documentInput');
 
             const skills = skillsStr.split(',').map(s => s.trim()).filter(s => s);
 
+            // Update profile data
             await this.api.updateUserProfile(this.currentUser.id, { 
                 institution, 
                 occupation, 
@@ -526,14 +579,56 @@ class AppState {
                 cvFilename: 'CV_' + (this.currentUser.name || 'Student').replace(/\s+/g, '_') + '.txt'
             });
 
+            // Upload document if file selected (with progress)
+            if (documentInput && documentInput.files && documentInput.files[0]) {
+                try {
+                    // insert progress UI
+                    let progressWrap = document.getElementById('uploadProgressWrap');
+                    if (!progressWrap) {
+                        progressWrap = document.createElement('div');
+                        progressWrap.id = 'uploadProgressWrap';
+                        progressWrap.style.marginTop = '8px';
+                        const pb = document.createElement('div');
+                        pb.id = 'uploadProgressBar';
+                        pb.style.width = '0%';
+                        pb.style.height = '8px';
+                        pb.style.background = '#2563eb';
+                        pb.style.borderRadius = '4px';
+                        pb.style.transition = 'width 0.2s';
+                        const container = document.createElement('div');
+                        container.style.width = '100%';
+                        container.style.background = '#e6e9ef';
+                        container.style.borderRadius = '4px';
+                        container.appendChild(pb);
+                        progressWrap.appendChild(container);
+                        document.getElementById('saveProfileBtn').insertAdjacentElement('beforebegin', progressWrap);
+                    }
+
+                    await this.api.uploadDocument(this.currentUser.id, documentInput.files[0], (percent) => {
+                        const bar = document.getElementById('uploadProgressBar');
+                        if (bar) bar.style.width = percent + '%';
+                    });
+
+                    // remove progress UI after short delay
+                    setTimeout(() => {
+                        const p = document.getElementById('uploadProgressWrap');
+                        if (p) p.remove();
+                    }, 800);
+                } catch (error) {
+                    console.warn('Document upload error:', error.message || error);
+                    const p = document.getElementById('uploadProgressWrap'); if (p) p.remove();
+                }
+            }
+
             this.currentUser.institution = institution;
             this.currentUser.occupation = occupation;
             this.currentUser.skills = skills;
             this.currentUser.experience = experience;
             this.currentUser.cv = cv;
 
-            alert('Profile updated successfully!');
+            alert('Profile and document updated successfully!');
             this.updateProfileStrength();
+            this.renderStudentDashboard();
         } catch (error) {
             alert(error.message);
         }
@@ -595,6 +690,57 @@ class AppState {
             this.loadAdminStats();
         } catch (error) {
             alert(error.message);
+        }
+    }
+
+    async showDocumentReviewModal(userId, userName) {
+        try {
+            const user = await this.api.getUser(userId);
+            
+            let docContent = 'No document submitted';
+            if (user.cvPath) {
+                docContent = '<a href="' + user.cvPath + '" target="_blank" class="text-blue-600 hover:underline">📄 ' + (user.cvFilename || 'Download Document') + '</a>';
+            }
+
+            const html = '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div class="bg-white rounded-lg p-8 max-w-2xl max-h-96 overflow-y-auto"><div class="flex justify-between items-start mb-4"><h2 class="text-2xl font-bold">Review Document: ' + userName + '</h2><button id="closeReviewModal" class="text-gray-600 hover:text-gray-900 text-2xl">&times;</button></div><div class="space-y-4"><div><h3 class="font-bold text-gray-900">Email:</h3><p class="text-gray-700">' + user.email + '</p></div><div><h3 class="font-bold text-gray-900">Institution:</h3><p class="text-gray-700">' + (user.institution || 'N/A') + '</p></div><div><h3 class="font-bold text-gray-900">Occupation:</h3><p class="text-gray-700">' + (user.occupation || 'N/A') + '</p></div><div><h3 class="font-bold text-gray-900">Submitted At:</h3><p class="text-gray-700">' + (user.documentSubmittedAt ? new Date(user.documentSubmittedAt).toLocaleDateString() : 'N/A') + '</p></div><div><h3 class="font-bold text-gray-900">Document:</h3><div class="text-gray-700 bg-gray-50 p-3 rounded">' + docContent + '</div></div>' + (user.documentReviewNotes ? '<div><h3 class="font-bold text-gray-900">Review Notes:</h3><p class="text-gray-700">' + user.documentReviewNotes + '</p></div>' : '') + '<div class="space-y-2"><label class="block text-gray-700 text-sm font-bold mb-2">Review Notes</label><textarea id="reviewNotes" class="w-full border rounded px-3 py-2 h-20" placeholder="Add your review notes..."></textarea></div><div class="flex gap-2"><button id="approveBtn" class="flex-1 bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700">✓ Approve</button><button id="rejectBtn" class="flex-1 bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">✗ Reject</button></div></div></div></div>';
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            document.getElementById('closeReviewModal').addEventListener('click', () => {
+                document.querySelector('.fixed').remove();
+            });
+
+            document.getElementById('approveBtn').addEventListener('click', async () => {
+                const notes = document.getElementById('reviewNotes').value;
+                try {
+                    await this.api.approveDocument(userId, true, notes);
+                    alert('Document approved successfully!');
+                    document.querySelector('.fixed').remove();
+                    this.loadUsers();
+                } catch (error) {
+                    alert('Error approving document: ' + error.message);
+                }
+            });
+
+            document.getElementById('rejectBtn').addEventListener('click', async () => {
+                const notes = document.getElementById('reviewNotes').value;
+                try {
+                    await this.api.approveDocument(userId, false, notes);
+                    alert('Document rejected successfully!');
+                    document.querySelector('.fixed').remove();
+                    this.loadUsers();
+                } catch (error) {
+                    alert('Error rejecting document: ' + error.message);
+                }
+            });
+
+            document.querySelector('.fixed').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    e.target.remove();
+                }
+            });
+        } catch (error) {
+            alert('Error loading document: ' + error.message);
         }
     }
 

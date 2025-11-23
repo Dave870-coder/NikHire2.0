@@ -32,12 +32,15 @@
   "homepage": "https://github.com/Dave870-coder/NikHire#readme",
   "type": "commonjs",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.1.5",
     "jsonwebtoken": "^9.0.2",
     "mongodb-memory-server": "^10.3.0",
-    "mongoose": "^8.19.3"
+    "mongoose": "^8.19.3",
+    "multer": "^1.4.5-lts.1"
   }
 }

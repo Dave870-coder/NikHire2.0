@@ -28,14 +28,23 @@ class APIClient {
         try {
             const response = await fetch(`${this.baseURL}/api/auth/register`, {
                 method: 'POST',
-                headers: this.getHeaders(),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify(userData)
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message);
+            if (!response.ok) {
+                throw new Error(data.message || 'Registration failed');
+            }
 
-            this.setToken(data.token);
+            if (data.token) {
+                        this.setToken(data.token);
+                    }
+                    if (data.refreshToken) {
+                        localStorage.setItem('refreshToken', data.refreshToken);
+            }
             return data.user;
         } catch (error) {
             throw error;
@@ -46,14 +55,23 @@ class APIClient {
         try {
             const response = await fetch(`${this.baseURL}/api/auth/login`, {
                 method: 'POST',
-                headers: this.getHeaders(),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ email, password })
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message);
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
 
-            this.setToken(data.token);
+            if (data.token) {
+                this.setToken(data.token);
+            }
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
+            }
             return data.user;
         } catch (error) {
             throw error;
@@ -115,6 +133,66 @@ class APIClient {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message);
             return data.user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async uploadDocument(userId, file, onProgress) {
+        return new Promise((resolve, reject) => {
+            try {
+                const xhr = new XMLHttpRequest();
+                const url = `${this.baseURL}/api/users/${userId}/upload-document`;
+                const formData = new FormData();
+                formData.append('document', file);
+
+                xhr.open('POST', url, true);
+                if (this.token) xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);
+
+                xhr.upload.onprogress = function (e) {
+                    if (e.lengthComputable && typeof onProgress === 'function') {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        onProgress(percent, e.loaded, e.total);
+                    }
+                };
+
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        try {
+                            const resp = JSON.parse(xhr.responseText || '{}');
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve(resp);
+                            } else {
+                                reject(new Error(resp.message || 'Upload failed'));
+                            }
+                        } catch (err) {
+                            reject(err);
+                        }
+                    }
+                };
+
+                xhr.onerror = function (err) {
+                    reject(err || new Error('Network error during upload'));
+                };
+
+                xhr.send(formData);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async approveDocument(userId, approved, reviewNotes = '') {
+        try {
+            const response = await fetch(`${this.baseURL}/api/users/${userId}/approve-document`, {
+                method: 'PUT',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ approved, reviewNotes })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            return data;
         } catch (error) {
             throw error;
         }
