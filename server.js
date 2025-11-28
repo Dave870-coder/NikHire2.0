@@ -19,7 +19,6 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-app.use(cookieParser());
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
@@ -29,6 +28,7 @@ const { Readable } = require('stream');
 dotenv.config();
 
 const app = express();
+app.use(cookieParser());
 
 // ==================== MIDDLEWARE ====================
 
