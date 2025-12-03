@@ -1,16 +1,3 @@
-// S3 config
-let s3 = null;
-let useS3 = false;
-if (process.env.USE_S3 === 'true') {
-  const AWS = require('aws-sdk');
-  AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION || 'us-east-1'
-  });
-  s3 = new AWS.S3();
-  useS3 = true;
-}
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -25,12 +12,32 @@ const path = require('path');
 const fs = require('fs');
 const { Readable } = require('stream');
 
+// Load environment variables first
 dotenv.config();
 
+// S3 config (after dotenv.config())
+let s3 = null;
+let useS3 = false;
+if (process.env.USE_S3 === 'true') {
+  try {
+    const AWS = require('aws-sdk');
+    AWS.config.update({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION || 'us-east-1'
+    });
+    s3 = new AWS.S3();
+    useS3 = true;
+  } catch (err) {
+    console.warn('⚠ S3 not configured, using disk/GridFS');
+  }
+}
+
 const app = express();
+
+// Apply middleware
 app.use(cookieParser());
 
-// ==================== MIDDLEWARE ====================
 
 // CORS configuration - more restrictive for production
 const corsOptions = {
@@ -1091,5 +1098,8 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+// Start the server
+startServer();
 
 startServer();
