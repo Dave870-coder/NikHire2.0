@@ -1,0 +1,19 @@
+John Doe
+Software Engineer
+
+PROFESSIONAL SUMMARY
+Experienced full-stack developer with 5+ years in web technologies and cloud platforms.
+
+EXPERIENCE
+- Senior Developer at Tech Corp (2020-2025)
+  * Led API development for 10M+ users
+  * Implemented microservices architecture
+  
+- Junior Developer at StartUp Inc (2018-2020)
+  * Built customer-facing web applications
+
+SKILLS
+JavaScript, Python, Node.js, React, MongoDB, AWS, Docker, Kubernetes
+
+EDUCATION
+B.S. Computer Science - State University (2018)
